@@ -1,0 +1,13 @@
+[Unit]
+Description=salvo tanıtım sayfası
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/node %h/work/salvo/src/site.mjs 3500
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=default.target

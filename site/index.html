@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="tr"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>salvo — yayınlamadan önce bir bak</title>
+<meta name="description" content="npm publish'ten önce paketin gerçekten söylediği şey olduğunu doğrular.">
+<style>
+:root{--bg:#0f1115;--card:#161a21;--line:#232833;--fg:#e6e8ec;--dim:#8b93a3;
+--red:#ff5c5c;--green:#34d399;--amber:#ffb020;color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.6 ui-sans-serif,system-ui,sans-serif;padding:3rem 1.25rem}
+main{max-width:44rem;margin:0 auto}
+h1{font-size:2.1rem;letter-spacing:-.03em;margin:0}
+.lead{color:var(--dim);margin:.6rem 0 2rem;font-size:1.05rem}
+h2{font-size:1.05rem;margin:2.5rem 0 .8rem;letter-spacing:-.01em}
+pre{background:var(--card);border:1px solid var(--line);border-radius:.7rem;padding:1rem 1.15rem;overflow-x:auto;font-size:.86rem;line-height:1.5}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+p code,li code{background:var(--card);border:1px solid var(--line);border-radius:.3rem;padding:.05em .35em;font-size:.88em}
+table{width:100%;border-collapse:collapse;font-size:.9rem}
+th,td{text-align:start;padding:.55rem .6rem;border-bottom:1px solid var(--line);vertical-align:top}
+th{color:var(--dim);font-weight:600;font-size:.78rem;text-transform:uppercase;letter-spacing:.05em}
+.bad{color:var(--red)}.good{color:var(--green)}.warn{color:var(--amber)}
+a{color:var(--fg)}footer{margin-top:3rem;color:var(--dim);font-size:.85rem}
+</style></head><body><main>
+
+<h1>salvo</h1>
+<p class="lead"><code>npm publish</code>'ten önce, yayınlanacak paketin gerçekten
+söylediği şey olduğunu doğrular. Bir kez çalışır, sorun varsa sıfırdan farklı çıkar.</p>
+
+<pre><code>npx salvo</code></pre>
+
+<h2>Neden yazıldı</h2>
+<p><code>bukalemun@1.5.0</code> npm'e 14:28'de çıktı. Çalışma zamanının sürümünü
+sabit koddan kurtaran commit 14:46'da girdi. Yayınlanan pakette
+<code>bk.version</code> hâlâ <code>1.3.2</code> diyordu — yani 1.5.0, düzelttiğini
+iddia ettiği hatayı taşıyarak yayınlandı.</p>
+<p>Testler yeşildi; testler çalışma ağacına bakıyordu, tarball'ın içine kimse
+bakmamıştı. <code>prepublishOnly</code> da kurtarmadı: derliyordu ama sonucu
+commit'li <code>dist/</code> ile karşılaştıran bir şey yoktu.</p>
+
+<h2>Aynı iki commit üzerinde</h2>
+<pre><code>$ salvo bukalemun@f058fce        <span class="dim"># npm'e kırık giden hâl</span>
+<span class="bad">✗</span> version-echo  dist/bukalemun.cjs içinde sürüm "1.3.2" yazıyor, package.json "1.5.0" diyor.
+<span class="bad">✗</span> version-echo  dist/bukalemun.esm.js içinde sürüm "1.3.2" yazıyor…
+<span class="bad">✗</span> version-echo  dist/bukalemun.min.js  …
+  <span class="bad">6 engel</span>, 1 uyarı — yayınlama.                       → çıkış 1
+
+$ salvo bukalemun@decfe18        <span class="dim"># düzeltilmiş hâl</span>
+  <span class="good">temiz</span> — paket söylediği şey.                        → çıkış 0</code></pre>
+
+<h2>Kontroller</h2>
+<table>
+<tr><th>Kontrol</th><th>Yakaladığı</th></tr>
+<tr><td><code>build-drift</code></td><td>Commit'li çıktı, HEAD'in temiz bir kopyasından yapılan derlemeyle ayrışmış</td></tr>
+<tr><td><code>version-echo</code></td><td>Pakete giren dosyalardaki sürüm bildirimleri <code>package.json</code> ile uyuşmuyor</td></tr>
+<tr><td><code>git-state</code></td><td>Yayınlanan ağaç commit'lenmemiş ya da pushlanmamış</td></tr>
+<tr><td><code>entrypoints</code></td><td><code>main</code>/<code>module</code>/<code>types</code>/<code>exports</code>/<code>bin</code> var olmayan dosyayı gösteriyor</td></tr>
+<tr><td><code>secrets</code></td><td>Tarball'a <code>.env</code>, <code>.npmrc</code>, özel anahtar ya da token girmiş</td></tr>
+<tr><td><code>tag-match</code></td><td>Sürümle git etiketi ayrışmış; yayının kaynağı sonradan bulunamaz</td></tr>
+</table>
+
+<h2>CI'da</h2>
+<pre><code>- uses: actions/checkout@v4
+  with: { fetch-depth: 0 }     <span class="dim"># build-drift `git archive HEAD` çalıştırır</span>
+- run: npx salvo</code></pre>
+
+<footer>
+MIT · <a href="https://github.com/nickzsche/salvo">github.com/nickzsche/salvo</a><br>
+Dosya listesi <code>npm pack --dry-run --json</code>'dan alınıyor —
+<code>files</code> alanını elle yorumlamak <code>.npmignore</code> ve npm'in kendi
+kuralları yüzünden er ya da geç ayrışır.
+</footer>
+</main></body></html>
