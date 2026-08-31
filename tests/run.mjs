@@ -57,6 +57,16 @@ test("0.0.0-dev gibi yer tutucular sürüm sayılmıyor", () => {
   rmSync(dir, { recursive: true, force: true });
 });
 
+test("yorum içindeki sürüm gerçek sanılmıyor", () => {
+  const dir = repo({
+    "package.json": "{}",
+    "a.js": "// bukalemun@1.5.0'da dist hâlâ '1.3.2' diyordu\n/* var VERSION = \"9.9.9\" */\nexport const version = \"2.0.0\";",
+  });
+  const f = versionEcho({ dir, pkg: { version: "2.0.0" }, files: ["a.js"] });
+  assert(f.length === 0, `yorumdaki sürümler hata sayıldı: ${JSON.stringify(f.map((x) => x.message))}`);
+  rmSync(dir, { recursive: true, force: true });
+});
+
 test("olmayan giriş noktası yakalanıyor", () => {
   const dir = repo({ "package.json": "{}", "index.js": "" });
   const pkg = { main: "index.js", types: "types/index.d.ts", exports: { ".": "./index.js", "./css": "./dist/a.css" } };
