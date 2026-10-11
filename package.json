@@ -7,6 +7,5 @@
   "files": ["src", "README.md", "LICENSE"],
   "scripts": { "test": "node tests/run.mjs" },
   "engines": { "node": ">=20" },
-  "license": "MIT",
   "keywords": ["npm", "publish", "release", "preflight", "supply-chain", "provenance"]
 }
