@@ -5,7 +5,7 @@ import { mkdtempSync, writeFileSync, mkdirSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { execFileSync } from "node:child_process";
-import { entrypoints, versionEcho, secrets, gitState, tagMatch, buildDrift } from "../src/checks.mjs";
+import { entrypoints, filesList, versionEcho, secrets, gitState, tagMatch, buildDrift } from "../src/checks.mjs";
 
 let pass = 0; const failures = [];
 const test = (n, f) => { try { f(); pass++; console.log(`  \x1b[32m✓\x1b[0m ${n}`); }
@@ -81,6 +81,42 @@ test("joker içeren exports yolları eksik sayılmıyor", () => {
   const dir = repo({ "package.json": "{}" });
   assert(entrypoints({ dir, pkg: { exports: { "./styles/*": "./dist/styles/*" } } }).length === 0,
     "joker yol var olmayan dosya sanıldı");
+  rmSync(dir, { recursive: true, force: true });
+});
+
+test("files listesindeki var olmayan girdi yakalanıyor", () => {
+  const dir = repo({ "package.json": "{}", "src/a.js": "", "README.md": "x" });
+  // LICENSE silinmiş ama files'ta kalmış — salvo'nun kendi geçmişindeki hata.
+  const f = filesList({ dir, pkg: { files: ["src", "README.md", "LICENSE"] } });
+  assert(f.length === 1, `1 eksik bekleniyordu, ${f.length}`);
+  assert(f[0].check === "declared-files" && f[0].level === "error", "engel olmalı");
+  assert(f[0].message.includes("LICENSE"), "eksik girdi adı yazılmalı");
+  rmSync(dir, { recursive: true, force: true });
+});
+
+test("var olan files girdileri ses çıkarmıyor", () => {
+  const dir = repo({ "package.json": "{}", "src/a.js": "", "README.md": "x" });
+  assert(filesList({ dir, pkg: { files: ["src", "README.md"] } }).length === 0, "yanlış alarm");
+  rmSync(dir, { recursive: true, force: true });
+});
+
+test("files jokerinin dizin öneki yoksa yakalanıyor", () => {
+  const dir = repo({ "package.json": "{}", "build/x.css": "" });
+  assert(filesList({ dir, pkg: { files: ["dist/**/*.css"] } }).length === 1, "ölü dist/** kaçtı");
+  assert(filesList({ dir, pkg: { files: ["build/**/*.css"] } }).length === 0, "var olan dizin hata sayıldı");
+  rmSync(dir, { recursive: true, force: true });
+});
+
+test("joker/olumsuzlama files girdileri atlanıyor", () => {
+  const dir = repo({ "package.json": "{}" });
+  const f = filesList({ dir, pkg: { files: ["*.js", "!dist/secret"] } });
+  assert(f.length === 0, `glob-only/negation yanlış sayıldı: ${JSON.stringify(f.map((x) => x.message))}`);
+  rmSync(dir, { recursive: true, force: true });
+});
+
+test("files alanı yoksa kontrol sessiz", () => {
+  const dir = repo({ "package.json": "{}" });
+  assert(filesList({ dir, pkg: {} }).length === 0, "files yokken tarandı");
   rmSync(dir, { recursive: true, force: true });
 });
 

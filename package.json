@@ -4,7 +4,7 @@
   "description": "npm publish'ten önce paketin gerçekten söylediği şey olduğunu doğrular — commit'li çıktı kaynakla ayrışmış mı, sürüm bildirimleri uyuşuyor mu, tarball'a gizli bilgi girmiş mi.",
   "type": "module",
   "bin": { "salvo": "src/cli.mjs" },
-  "files": ["src", "README.md", "LICENSE"],
+  "files": ["src", "README.md"],
   "scripts": { "test": "node tests/run.mjs" },
   "engines": { "node": ">=20" },
   "keywords": ["npm", "publish", "release", "preflight", "supply-chain", "provenance"]

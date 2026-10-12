@@ -66,6 +66,40 @@ export function entrypoints({ dir, pkg }) {
       "Kurulan paket bu yolu çözemez; require/import hata verir."));
 }
 
+/* ────────────────────────────────────────────────────────── files-list ── */
+
+const GLOB = /[*?[\]{}!]/;
+
+/**
+ * `files` beyaz listesindeki bir yol gerçekten var mı? npm var olmayan bir
+ * girdiyi sessizce atlar — "LICENSE gönderiyorum" deyip göndermeyen bir paket
+ * hiçbir hata vermez. Sürüm çubuğu yeniden adlandırılınca (ör. `dist`→`build`)
+ * eski girdi kalır ve amaçlanan dosyalar pakete hiç girmez.
+ *
+ * Joker içeren girdiler atlanmaz: ilk joker karaktere kadarki gerçek dizin
+ * öneki yoksa ("dist/**" ama dist/ hiç yok) bu da bir hatadır.
+ */
+export function filesList({ dir, pkg }) {
+  if (!pkg.files) return [];
+  const entries = typeof pkg.files === "string" ? [pkg.files] : pkg.files;
+  const out = [];
+  for (const raw of entries) {
+    if (typeof raw !== "string") continue;
+    const entry = raw.trim();
+    if (!entry || entry.startsWith("!")) continue;
+
+    // Joker varsa yalnız ilk joker içeren segmentten önceki dizine bak.
+    const literal = entry.split(/[*?[\]{}!]/)[0].replace(/\/+$/, "");
+    const probe = (GLOB.test(entry) ? literal : entry).replace(/^\.\//, "");
+    if (!probe || existsSync(join(dir, probe))) continue;
+
+    out.push(finding("error", "declared-files",
+      `package.json files listesinde "${entry}" var, o yol yok.`,
+      "npm bu girdiyi sessizce atlar; göndermeyi amaçladığın dosya pakete girmez."));
+  }
+  return out;
+}
+
 /* ───────────────────────────────────────────────────────── version-echo ── */
 
 
@@ -237,8 +271,8 @@ export function buildDrift({ dir, pkg, buildDirs, buildScript = "build", install
   }
 }
 
-export const ALL = { gitState, entrypoints, versionEcho, secrets, tagMatch, buildDrift };
+export const ALL = { gitState, entrypoints, filesList, versionEcho, secrets, tagMatch, buildDrift };
 export const NAMES = {
-  gitState: "git-state", entrypoints: "entrypoints", versionEcho: "version-echo",
-  secrets: "secrets", tagMatch: "tag-match", buildDrift: "build-drift",
+  gitState: "git-state", entrypoints: "entrypoints", filesList: "declared-files",
+  versionEcho: "version-echo", secrets: "secrets", tagMatch: "tag-match", buildDrift: "build-drift",
 };

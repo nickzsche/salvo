@@ -25,6 +25,7 @@ paketle gönderilecek çıktıyla aynı mı?**
 | `version-echo` | Paketin içindeki sürüm bildirimleri package.json ile uyuşmuyor |
 | `git-state` | Yayınlanan ağaç commit'lenmemiş ya da pushlanmamış |
 | `entrypoints` | `main`/`module`/`types`/`exports` var olmayan dosyayı gösteriyor |
+| `declared-files` | `files` listesindeki dosya/dizin artık yok — npm onu sessizce atlar |
 | `secrets` | Tarball'a `.env`, anahtar, `.npmrc` gibi bir şey girmiş |
 | `tag-match` | `package.json` sürümüyle git etiketi ayrışmış |
 
